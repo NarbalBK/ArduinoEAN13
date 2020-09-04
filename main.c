@@ -1,8 +1,34 @@
+//
+//  ean13.ino
+//  ean13
+//  03/09/2020
+//
+//FEITO POR PERICLES NARBAL E SUZANE SOUTO
+//Trabalho da disciplina de Sistemas Embarcados
+//Engenharia da Computação - IFCE
+//
+//Titulo: Gerador de código de barras do tipo EAN-13
+//
+//Descrição: Gera uma imagem pgm com um código de
+//barras do tipo EAN-13 a partir de um código
+//numérico de 12 digitos.
+//
+//Modo de uso: Insira um código de 12 digitos na entrada Serial.
+//O código executado irá retornar dados equivalentes a uma imagem
+//.pgm na saida serial do arduino.
+//
+//ESTE PROGRAMA TEM COMO ALVO A PLATAFORMA ARDUINO.
+//NÃO É GARANTIDO O FUNCIONAMENTO EM OUTRAS PLATAFORMAS.
+//
+  //biblioteca de funcoes para memoria eeprom
   #include <EEPROM.h>
-   
+
+   //Armazena a entrada de dados
   char bar[13];
+  //Armazena a entrada traduzida para o padrao ean13 binário.
   bool code[114];
-  
+
+  //Recebe a entrada
   String auxString;
   //Identificador do tipo .pgm
   char magicNumber[3] = "P2";
@@ -10,16 +36,6 @@
   char fileName[7] = "ean13_";//6
   //Guarda a quantidade de vezes que o programa foi executado em sequencia
   int fileNumber = 0;
-
-  static void s_print_bool_arr(bool* arr, int n)
-  {
-      int i;
-      
-      for (i = 0; i < n; i++) {
-          Serial.print((int)arr[i]);
-      }
-      Serial.print("\r\n");
-  }
 
   //Facilita a separação das sequências aceitas pelo código de barras do lado esquerdo
   enum parity_e {
@@ -156,16 +172,22 @@
       
       return 0;
   }
+
+  // O codigo de barras foi dividido em 3 partes
+  // Para otimizar a utiliacao de espaço na memoria
+  
+    //retorna a primeira parte da imagem
     void printCode(bool *code){
       for (int j = 0; j < 113; j++){
         int auxInt = (int)code[j];
         auxInt = (auxInt+1)%2;
-        Serial.print(auxInt);
-        Serial.print(' ');
+        Serial.write(auxInt+0x30);
+        Serial.write(' ');
       }
-      Serial.print("\r\n");
+      Serial.write("\r\n");
     }
 
+    //limpa a matrix de imagem instanciada na memoria ram
     void cleanMatrix(bool matrixData[10][113]){
     for (int j = 0; j < 10; j++){
       for (int i = 0; i<113; i++){
@@ -174,6 +196,7 @@
     }
   }
 
+  //Guarda a segunda parte da imagem na eeprom
   void saveInEEPROM(bool *code){
     int addr = 0;
     for (int j = 0; j < 9; j++){
@@ -184,20 +207,22 @@
      }
   }
 
+  //retorna a segunda parte da imagem
   void printFromEEPROM(void){
     int addr = 0;
     for (int j = 0; j < 9; j++){
         for (int i = 0; i<113; i++){
           int auxInt = (int)EEPROM.read(addr);
           auxInt = (auxInt+1)%2;
-          Serial.print(auxInt);
-          Serial.print(' ');
+          Serial.write(auxInt+0x30);
+          Serial.write(' ');
           addr++;
         }
-        Serial.print("\r\n");
+        Serial.write("\r\n");
      }
   }
-  
+
+  //guarda a terceira parte da matriz da memoria ram
   void createMatrixData(bool matrixData[10][113], bool *code ){
     for (int j = 0; j < 10; j++){
         for (int i = 0; i<113; i++){
@@ -206,6 +231,7 @@
      }
   }
 
+  //retorna a terceira e ultima parte da imagem
   void printFromMatrix(bool matrixData[10][113]){
     //Cria o header para uma imagem tipo .pgm
     //writePgmHeader(ean13);
@@ -216,26 +242,25 @@
       //inverte o número pois na imagem 1 é branco e 0 é preto
       int auxInt = (int)matrixData[j][i];
       auxInt = (auxInt+1)%2;
-
-      Serial.print(auxInt);
-      Serial.print(' ');
+      Serial.write(auxInt+0x30);
+      Serial.write(' ');
     }
     
-    Serial.print("\r\n");
+    Serial.write("\r\n");
     }
   }
 
   void setup() {
-    // put your setup code here, to run once:
     Serial.begin(9600);
   }
   
   void loop() {
-    //Gauarda entrada do programa
+    //intancia a matriz que recebera parte da imagem na ram
     bool matrixData[10][113];
+    
     cleanMatrix(matrixData);
  
-    Serial.write("Insira um código numérico: (12 digitos)\n");
+    Serial.print("Insira um código numérico: (12 digitos)\n");
     
     while (Serial.available() == 0){}; 
     auxString = Serial.readString();
@@ -252,14 +277,17 @@
     Serial.print("Codigo recebido: ");
     Serial.println(bar);
     Serial.print("\r\n");
-    Serial.println(magicNumber);
-    Serial.print("# ");
-    Serial.print(fileName);
-    Serial.print(fileNumber);
-    Serial.print(".pgm");
-    Serial.print("\r\n");
-    Serial.println("113 20");
-    Serial.println("1");
+    Serial.write(magicNumber);
+    Serial.write("\r\n");
+    Serial.write("# ");
+    Serial.write(fileName);
+    Serial.write(fileNumber+0x30);
+    Serial.write(".pgm");
+    Serial.write("\r\n");
+    Serial.write("113 20");
+    Serial.write("\r\n");
+    Serial.write("1");
+    Serial.write("\r\n");
     
     printCode(code);
     printFromMatrix(matrixData);

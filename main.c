@@ -17,6 +17,13 @@
 //O código executado irá retornar dados equivalentes a uma imagem
 //.pgm na saida serial do arduino.
 //
+// ----- ATENCAO --------
+//Os testes internos foram retirados para economia de memoria
+//Para testar de maneira externa copie os valores da saída serial
+//entre P2 e o ultimo numero da matriz em um arquivo .pgm, salve 
+//e abra em seguida. Utilize um app de celular para ler o codigo
+//e compare os valores.
+//
 //ESTE PROGRAMA TEM COMO ALVO A PLATAFORMA ARDUINO.
 //NÃO É GARANTIDO O FUNCIONAMENTO EM OUTRAS PLATAFORMAS.
 //
